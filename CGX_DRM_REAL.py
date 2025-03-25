@@ -93,7 +93,7 @@ if arquivo:
 
 else:
     st.info("⚠️ Envie uma planilha para começar.")
-"""
+
 
 # Salvar versão final
 final_uploaded_app_path = "/mnt/data/app_final_robusto.py"
