@@ -99,5 +99,3 @@ else:
 final_uploaded_app_path = "/mnt/data/app_final_robusto.py"
 with open(final_uploaded_app_path, "w") as f:
     f.write(app_corrigido_final)
-
-final_uploaded_app_path
