@@ -1,19 +1,10 @@
-# Versão final de app.py conforme solicitado:
-# - Leitura CSV online via Google Sheets
-# - Sanitização automática do nome do arquivo
-# - Interface minimalista, moderna (cores da COGEX)
-# - Login simples (COGEX / X)
-# - Visual com grid harmonioso (phi)
-# - Gráficos nativos e layout leve para Streamlit Cloud
-
-final_code = """
 import streamlit as st
 import pandas as pd
 
-# ==================== CONFIG ====================
+# ==================== CONFIGURAÇÃO DA PÁGINA ====================
 st.set_page_config(layout="wide", page_title="Painel COGEX", page_icon="⚖️")
 
-# ========== LOGIN ==========
+# ==================== LOGIN BÁSICO ====================
 USUARIOS = {"COGEX": "X"}
 with st.sidebar:
     st.title("🔐 Login")
@@ -23,7 +14,7 @@ with st.sidebar:
         st.warning("Acesso restrito. Digite usuário e senha.")
         st.stop()
 
-# ========== ESTILO ==========
+# ==================== ESTILO PERSONALIZADO ====================
 st.markdown('''
 <style>
 body {
@@ -42,10 +33,11 @@ div[data-testid="metric-container"] {
 </style>
 ''', unsafe_allow_html=True)
 
+# ==================== CABEÇALHO ====================
 st.markdown("## ⚖️ Painel de Prestação de Contas DRM - COGEX")
 st.markdown("Análise de conformidade cartorial baseada em dados oficiais")
 
-# ========== LEITURA DO CSV ONLINE ==========
+# ==================== LEITURA DO CSV ONLINE ====================
 csv_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFkt94_9-JFD7JitT28Yqe_S0awybvb9qneZ7XqMG925w-XZ1ITSYocQk7nE8J-rgiC7rvsNl0MWVZ/pub?gid=1686411433&single=true&output=csv"
 
 @st.cache_data
@@ -64,7 +56,7 @@ def carregar_dados(url):
 
 df = carregar_dados(csv_url)
 
-# ========== EXTRAÇÃO MUNICÍPIO E ANO ==========
+# ==================== EXTRAÇÃO DE MUNICÍPIO E ANO DO ARQUIVO ====================
 def extrair_municipio_ano(arquivo):
     if isinstance(arquivo, str):
         partes = arquivo.replace("-", " ").replace("_", " ").split()
@@ -75,7 +67,7 @@ def extrair_municipio_ano(arquivo):
 
 df[['municipio_extraido', 'ano_extraido']] = df['Arquivo'].apply(lambda x: pd.Series(extrair_municipio_ano(x)))
 
-# ========== FILTROS ==========
+# ==================== FILTROS ====================
 st.sidebar.markdown("## 🎯 Filtros")
 ano = st.sidebar.selectbox("Ano", sorted(df['Ano'].unique()))
 status = st.sidebar.selectbox("Status", ['Todos', 'OK', 'FALHO'])
@@ -88,28 +80,20 @@ if status != 'Todos':
 if municipio != 'Todos':
     dados = dados[dados['municipio_extraido'] == municipio]
 
-# ========== KPIs ==========
+# ==================== KPIs ====================
 col1, col2, col3 = st.columns([1, 1, 1.618])  # proporção áurea
 col1.metric("📂 Registros", len(dados))
 col2.metric("📈 Prazo Médio", f"{round(dados['prazo_envio_dias'].mean(), 2)} dias")
 col3.metric("✅ % Conformidade", f"{round((dados['conforme'].sum()/len(dados))*100, 2)}%")
 
-# ========== TABELA ==========
+# ==================== TABELA ====================
 st.markdown("### 📋 Tabela de Dados")
 st.dataframe(dados[['municipio_extraido', 'Ano', 'Mês', 'prazo_envio_dias', 'status_envio']], use_container_width=True)
 
-# ========== GRÁFICOS NATIVOS ==========
+# ==================== GRÁFICOS ====================
 st.markdown("### 📊 Gráficos")
 
 if 'TOTAL_DA_RECEITA_BRUTA' in dados.columns:
     st.bar_chart(dados.groupby('municipio_extraido')['TOTAL_DA_RECEITA_BRUTA'].sum())
 
 st.bar_chart(dados['status_envio'].value_counts())
-"""
-
-# Salvar como app final para cloud
-final_app_cloud_path = "/mnt/data/app_streamlit_cloud_final.py"
-with open(final_app_cloud_path, "w") as f:
-    f.write(final_code)
-
-final_app_cloud_path
