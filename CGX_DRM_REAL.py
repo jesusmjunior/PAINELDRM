@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
+import openpyxl  # necessário para ler arquivos .xlsx
 
-# ========== CONFIG STREAMLIT ==========
+# ========== CONFIGURAÇÃO DA PÁGINA ==========
 st.set_page_config(layout="wide", page_title="Painel COGEX DRM", page_icon="⚖️")
 
 # ========== LOGIN ==========
@@ -18,19 +19,20 @@ with st.sidebar:
 st.title("⚖️ Painel COGEX - Prestação de Contas DRM")
 st.markdown("Visualização simplificada de conformidade cartorial baseada nos dados enviados.")
 
-# ========== CARREGAMENTO DINÂMICO (.CSV ou .XLSX) ==========
+# ========== UPLOAD DE ARQUIVO ==========
 arquivo = st.file_uploader("📁 Envie a base DRM (.xlsx ou .csv)", type=["xlsx", "csv"])
 
 if arquivo:
+    # Leitura segura do arquivo
     if arquivo.name.endswith(".csv"):
         df = pd.read_csv(arquivo)
     else:
-        df = pd.read_excel(arquivo)
+        df = pd.read_excel(arquivo, engine="openpyxl")
 
-    # Padronizar colunas
+    # Padronização dos nomes das colunas
     df.columns = df.columns.str.strip().str.upper().str.replace(" ", "_").str.replace("Ç", "C")
 
-    # Mapear nomes possíveis
+    # Tentativa de localizar colunas principais
     col_ano = next((c for c in df.columns if "ANO" in c), None)
     col_mes = next((c for c in df.columns if "MES" in c), None)
     col_data = next((c for c in df.columns if "RECOLHIMENTO" in c), None)
@@ -40,7 +42,7 @@ if arquivo:
         st.error("❌ Colunas essenciais ausentes: Ano, Mês ou Data do Recolhimento.")
         st.stop()
 
-    # Normalização
+    # Processamento
     df['ANO'] = df[col_ano].astype(str).str.extract(r'(\\d{4})').astype(int)
     df['MES'] = df[col_mes].fillna('01').astype(str).str.zfill(2)
     df['DATA_RECOLHIMENTO'] = pd.to_datetime(df[col_data], errors='coerce')
@@ -49,7 +51,7 @@ if arquivo:
     df['CONFORME'] = df['ATRASO_DIAS'] <= 10
     df['STATUS_ENVIO'] = df['CONFORME'].map({True: 'OK', False: 'FALHO'})
 
-    # Sanitização do campo Arquivo para extrair município/ano
+    # Extrair município e ano do nome do arquivo
     def extrair_municipio_ano(valor):
         if isinstance(valor, str):
             partes = valor.replace("-", " ").replace("_", " ").split()
@@ -93,6 +95,3 @@ if arquivo:
 
 else:
     st.info("⚠️ Envie uma planilha para começar.")
-
-
-# Salvar versão final
